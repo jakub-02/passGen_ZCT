@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#3b82f6',
+                            foreground: '#ffffff',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-sky-50 min-h-screen py-8">
+    <div class="container mx-auto px-4 max-w-md">
+        <h1 class="text-3xl font-bold text-center mb-2">Password Manager</h1>
+        <p class="text-center text-gray-500 mb-6">Generate, save and manage your passwords</p>
+        
+        <!-- Password Generator Card -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="space-y-6">
+                <!-- URL/Description Input -->
+                <div class="space-y-2">
+                    <label for="url" class="block text-sm font-medium">URL / Description</label>
+                    <input 
+                        id="url" 
+                        type="text" 
+                        value=""
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Enter website or description"
+                    >
+                </div>
+                
+                <!-- Username Input -->
+                <div class="space-y-2">
+                    <label for="username" class="block text-sm font-medium">Username</label>
+                    <input 
+                        id="username" 
+                        type="text"
+                        value=""
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="Enter username"
+                    >
+                </div>
+                
+                <!-- Password Display -->
+                <div class="space-y-2">
+                    <label for="password" class="block text-sm font-medium">Password</label>
+                    <div class="flex items-center">
+                        <input 
+                            id="password" 
+                            type="text" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                            placeholder="Generated password"
+                            readonly
+                        >
+                        <button 
+                            id="copy-btn"
+                            class="ml-2 h-10 w-10 flex items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none"
+                            aria-label="Copy password"
+                        >
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Password Length Slider -->
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <label for="length" class="block text-sm font-medium">Password Length: <span id="length-value">12</span></label>
+                    </div>
+                    <input 
+                        id="length" 
+                        type="range" 
+                        min="6" 
+                        max="32" 
+                        step="1"
+                        value="12"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    >
+                </div>
+                
+                <!-- Password Options -->
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="uppercase" 
+                            checked
+                            class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                        >
+                        <label for="uppercase" class="text-sm font-medium">Include Uppercase Letters</label>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="numbers" 
+                            checked
+                            class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                        >
+                        <label for="numbers" class="text-sm font-medium">Include Numbers</label>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="special" 
+                            checked
+                            class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                        >
+                        <label for="special" class="text-sm font-medium">Include Special Characters</label>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button 
+                        id="generate-btn"
+                        class="flex-1 bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center"
+                    >
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Generate
+                    </button>
+                    <button 
+                        id="save-btn"
+                        class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center justify-center"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Saved Passwords Card -->
+        <div id="saved-passwords-container" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Saved Passwords</h2>
+            <ul id="saved-passwords-list" class="space-y-4">
+                <!-- Saved passwords will be inserted here -->
+            </ul>
+        </div>
+        
+        <!-- Toast Notification -->
+        <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md shadow-lg transform transition-transform duration-300 translate-y-20 opacity-0 flex items-center">
+            <span id="toast-message">Message here</span>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const passwordInput = document.getElementById('password');
+        const lengthSlider = document.getElementById('length');
+        const lengthValue = document.getElementById('length-value');
+        const uppercaseCheckbox = document.getElementById('uppercase');
+        const numbersCheckbox = document.getElementById('numbers');
+        const specialCheckbox = document.getElementById('special');
+        const generateBtn = document.getElementById('generate-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const usernameInput = document.getElementById('username');
+        const urlInput = document.getElementById('url');
+        const savedPasswordsList = document.getElementById('saved-passwords-list');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            generatePassword();
+            loadPasswords();
+            
+            // Update length value display when slider changes
+            lengthSlider.addEventListener('input', () => {
+                lengthValue.textContent = lengthSlider.value;
+            });
+            
+            // Generate password button
+            generateBtn.addEventListener('click', generatePassword);
+            
+            // Copy password button
+            copyBtn.addEventListener('click', () => {
+                copyToClipboard(passwordInput.value);
+            });
+            
+            // Save password button
+            saveBtn.addEventListener('click', savePassword);
+
+            usernameInput.value = "";
+            urlInput.value = "";
+            lengthSlider .value = "12";
+        });
+        
+        // Generate password function
+        function generatePassword() {
+            const length = parseInt(lengthSlider.value);
+            const includeUppercase = uppercaseCheckbox.checked;
+            const includeNumbers = numbersCheckbox.checked;
+            const includeSpecial = specialCheckbox.checked;
+            
+            const lowercase = "abcdefghijklmnopqrstuvwxyz";
+            const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const numbers = "0123456789";
+            const special = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            
+            let chars = lowercase;
+            if (includeUppercase) chars += uppercase;
+            if (includeNumbers) chars += numbers;
+            if (includeSpecial) chars += special;
+            
+            let newPassword = "";
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * chars.length);
+                newPassword += chars[randomIndex];
+            }
+            
+            // Ensure at least one character from each selected type
+            let finalPassword = newPassword;
+            if (includeUppercase) {
+                const randomUppercase = uppercase[Math.floor(Math.random() * uppercase.length)];
+                finalPassword = replaceCharAt(finalPassword, Math.floor(Math.random() * length), randomUppercase);
+            }
+            if (includeNumbers) {
+                const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
+                finalPassword = replaceCharAt(finalPassword, Math.floor(Math.random() * length), randomNumber);
+            }
+            if (includeSpecial) {
+                const randomSpecial = special[Math.floor(Math.random() * special.length)];
+                finalPassword = replaceCharAt(finalPassword, Math.floor(Math.random() * length), randomSpecial);
+            }
+            
+            passwordInput.value = finalPassword;
+        }
+        
+        // Replace character at specific index
+        function replaceCharAt(str, index, char) {
+            return str.substring(0, index) + char + str.substring(index + 1);
+        }
+        
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            showToast('Copied to clipboard!');
+        }
+        
+        // Save password function
+        async function savePassword() {
+            const website = urlInput.value.trim();
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (!website || !username || !password) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch('http://localhost:3000/passwords', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ website, username, password })
+                });
+                const data = await res.json();
+                
+                if (data) {
+                    loadPasswords();
+                    showToast('Password saved successfully!');
+                    // Clear form fields
+                    urlInput.value = '';
+                    usernameInput.value = '';
+                    generatePassword();
+                } else {
+                    showToast('Failed to save password', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving password:', error);
+                showToast('Failed to save password', 'error');
+            }
+        }
+        
+        // Load saved passwords
+        async function loadPasswords() {
+            try {
+                const res = await fetch('http://localhost:3000/passwords');
+                const passwords = await res.json();
+                savedPasswordsList.innerHTML = '';
+                passwords.forEach(pw => {
+                    const li = document.createElement('li');
+                    li.className = 'p-4 border rounded-lg bg-gray-50';
+                    li.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="space-y-1">
+                                <p class="font-medium">${escapeHtml(pw.website)}</p>
+                                <p class="text-sm text-gray-500">Username: ${escapeHtml(pw.username)}</p>
+                                <div class="flex items-center">
+                                    <p class="text-sm text-gray-500 mr-2">Password:</p>
+                                    <code class="text-sm bg-gray-100 px-2 py-1 rounded password-value" data-id="${pw._id}">••••••••••••</code>
+                                    <button
+                                        class="toggle-password h-8 w-8 ml-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                        data-id="${pw._id}"
+                                        data-password="${escapeHtml(pw.password)}"
+                                    >
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button
+                                        class="copy-password h-8 w-8 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                        data-password="${escapeHtml(pw.password)}"
+                                    >
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button
+                                class="delete-password text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded"
+                                data-id="${pw._id}"
+                            >
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    savedPasswordsList.appendChild(li);
+                });
+                
+                // Add event listeners to the newly created elements
+                document.querySelectorAll('.toggle-password').forEach(button => {
+                    button.addEventListener('click', togglePasswordVisibility);
+                });
+                
+                document.querySelectorAll('.copy-password').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const password = this.getAttribute('data-password');
+                        copyToClipboard(password);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-password').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        deletePassword(id);
+                    });
+                });
+            } catch (error) {
+                console.error('Error loading passwords:', error);
+                showToast('Failed to load passwords', 'error');
+            }
+        }
+        
+        // Toggle password visibility
+        function togglePasswordVisibility() {
+            const id = this.getAttribute('data-id');
+            const password = this.getAttribute('data-password');
+            const passwordElement = document.querySelector(`.password-value[data-id="${id}"]`);
+            const isHidden = passwordElement.textContent === '••••••••••••';
+            
+            if (isHidden) {
+                passwordElement.textContent = password;
+                this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                passwordElement.textContent = '••••••••••••';
+                this.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+        
+        // Delete password
+        async function deletePassword(id) {
+            try {
+                await fetch(`http://localhost:3000/passwords/${id}`, { method: 'DELETE' });
+                loadPasswords();
+                showToast('Password deleted');
+            } catch (error) {
+                console.error('Error deleting password:', error);
+                showToast('Failed to delete password', 'error');
+            }
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toast.classList.add('bg-red-600');
+                toast.classList.remove('bg-gray-800');
+            } else {
+                toast.classList.add('bg-gray-800');
+                toast.classList.remove('bg-red-600');
+            }
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+        
+        // Escape HTML to prevent XSS
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
