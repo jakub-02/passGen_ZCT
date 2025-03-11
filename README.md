@@ -1,6 +1,6 @@
 # Docker Password Manager
 
-Táto aplikácia používa:
+**Táto aplikácia používa**:
     - MongoDB ako databázu (beží na porte 27017)
     - NodeJS ako backend (beží na porte 3000)
     - Nginx na spustenie .html súboru pre frontend (beží na porte 8080)
